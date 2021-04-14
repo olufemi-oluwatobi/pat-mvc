@@ -34,32 +34,6 @@ class Application {
     return BodyParser;
   }
 
-  /**
-   *
-   * @param {Object} request http request object
-   * @param {*} response http response object
-   */
-
-  _executeMiddleWareChain(request, response) {
-    const middlewares = this._middlewares;
-    // initial middleware index
-    let index = 0;
-
-    // current middleware on being executed
-    let layer;
-
-    const next = () => {
-      //
-      layer = middlewares[index++];
-
-      if (!layer) {
-        return;
-      }
-      layer(request, response, next);
-    };
-    next();
-  }
-
   static(staticRoutes) {
     this._staticRoutes = staticRoutes || [];
   }
@@ -100,14 +74,38 @@ class Application {
       request = new Request(request);
 
       // Instantiate framework response object
-      response = new Response(response, this._engine, this.logger, viewPath);
+      response = new Response(
+        response,
+        this._engine,
+        this.logger,
+        viewPath,
+        request
+      );
 
       request.controller = { data: {}, templateData: {} };
 
       const hasStaticData = this._loadStaticRoutes(request, response);
       if (!hasStaticData) {
-        this._executeMiddleWareChain(request, response);
-        this._resolveResponse(request, response);
+        const stack = this._middlewares;
+        let index = 0,
+          layer;
+
+        const handleMiddlewares = () => {
+          const next = () => {
+            layer = stack[index++];
+
+            if (!layer) {
+              this._resolveResponse(request, response);
+              return;
+            }
+
+            layer(request, response, next);
+          };
+          // start
+          next();
+        };
+
+        handleMiddlewares();
       }
     });
 
@@ -154,7 +152,7 @@ class Application {
       const resolvedData = this._router.resolve(request.method, request.url);
 
       if (!resolvedData) {
-        this.handle404(response);
+        this.handle404(request, response);
       } else {
         this.logger.info(
           `Request processing ${resolvedData.controller}.${resolvedData.action}`
@@ -192,7 +190,7 @@ class Application {
         };
 
         // execute controller
-        controller = await controller.run(
+        await controller.run(
           resolvedData.action,
           request.controller.data,
           this._baseDir

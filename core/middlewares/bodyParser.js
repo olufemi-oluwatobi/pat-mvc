@@ -12,22 +12,26 @@ const BodyParser = (request, response, next) => {
 
   let payload = "";
 
+  request.body = {};
+  request.taste = "taste";
+
   if (!request.controller.data.params) request.controller.data.params = {};
 
   // on new data chunk
-  request.on("data", (data) => {
-    payload += decoder.write(data);
-  });
+  request
+    .on("data", (data) => {
+      payload += decoder.write(data);
+    })
+    .on("end", () => {
+      payload += decoder.end();
+      const body = {
+        ...qs.parse(payload),
+      };
+      request.set("body", body);
+      next();
+    });
 
   // on request end
-  request.on("end", () => {
-    payload += decoder.end();
-    request.controller.data.params = {
-      ...request.controller.data.params,
-      ...qs.parse(payload),
-    };
-    next();
-  });
 };
 
 export default BodyParser;

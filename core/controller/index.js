@@ -24,23 +24,8 @@ export default class BaseController {
           this[key] = value;
         });
         await this[action](this.request, this.response);
-        const controllerName = this._controllerPath();
-
-        this._templatePath = path.resolve(
-          baseDir,
-          "views",
-          controllerName,
-          `${action}.ejs`
-        );
       } catch (err) {
-        console.log(err);
-        this._renderData.statusCode = 500;
-        this._renderData.params = {
-          error: {
-            message: err.message,
-            stack: err.stack,
-          },
-        };
+        this.response.status(500).send(error);
       }
     }
     return this;

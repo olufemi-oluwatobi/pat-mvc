@@ -1,15 +1,22 @@
 import path from "path";
+import cookie from "cookie";
+import { sign } from "cookie-signature";
 
-function Response(response, templateEngine, logger, viewPath) {
+function Response(response, templateEngine, logger, viewPath, request) {
   response.status = function (statusCode) {
     this.statusCode = statusCode;
     return this;
   };
 
+  response.req = request;
+
   response.send = function (message) {
     this.end(message);
   };
 
+  response.set = function (key, value) {
+    this[key] = value;
+  };
   response.redirect = function (path, statusCode) {
     if (!statusCode) statusCode = 302;
 
@@ -47,6 +54,46 @@ function Response(response, templateEngine, logger, viewPath) {
     }
   };
 
+  response.clearCookie = function (name, options = {}) {
+    var opts = { expires: new Date(1), path: "/", ...options };
+
+    return this.cookie(name, "", opts);
+  };
+
+  response.cookie = function (name, value, options = {}) {
+    // use cookie parser secret
+    var secret = this.req.secret;
+    var signed = options.signed;
+
+    if (signed && !secret) {
+      throw new Error('cookieParser("secret") required for signed cookies');
+    }
+
+    value =
+      typeof value === "object" ? "j:" + JSON.stringify(value) : String(value);
+
+    if (signed) {
+      value = "s:" + sign(value, secret);
+    }
+
+    // set expiry date use maximum age when provided
+    if ("maxAge" in options) {
+      options.expires = new Date(Date.now() + options.maxAge);
+      options.maxAge /= 1000;
+    }
+
+    // set path
+    if (options.path == null) {
+      options.path = "/";
+    }
+
+    this.setHeader(
+      "Set-Cookie",
+      cookie.serialize(name, String(value), options)
+    );
+
+    return this;
+  };
   return response;
 }
 

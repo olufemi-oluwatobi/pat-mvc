@@ -50,19 +50,21 @@ class Base {
 
   async save() {
     this._reloadAttributes();
-    this._runBeforeSaveHooks();
+    await this._runBeforeSaveHooks();
+
+    // Reload Attributes after running hooks
+    this._reloadAttributes();
     this._checkValidations();
     if (this.errors.length) {
       //TODO: HANDLE VALIDATION ERRORS
       throw new Error(this.errors);
     } else {
       const data = this.buildQueryData();
-      console.log("has been persisited", this._persisted);
+
       const result = this._persisted
         ? await this._update(data)
         : await this._insert(data);
-      this._runAfterSaveHooks();
-      console.log(result);
+      await this._runAfterSaveHooks();
       return result;
     }
   }
@@ -152,6 +154,7 @@ class Base {
         .select()
         .where(where)
         .first();
+      if (!res) return res;
       this._setMassAttributes(res);
       this._persisted = true;
       return this;
@@ -164,11 +167,9 @@ class Base {
     try {
       let res = await Client.from(this._tableName).insert(data);
       res = await Client.from(this._tableName).select().where({ id: res[0] });
-      console.log(res);
       this._setMassAttributes(res[0]);
       this._changedAttributes = [];
       this._persisted = true;
-      console.log(this.id);
       return this;
     } catch (error) {
       throw new Error(error);
@@ -184,6 +185,7 @@ class Base {
     this._persisted = true;
     return this;
   }
+
   _reloadAttributes() {
     for (let attribute in this._attributes) {
       if (
@@ -200,30 +202,42 @@ class Base {
   beforeSave(methods) {
     if (Array.isArray(methods)) {
       this._beforeSaveHooks = [...this._beforeSaveHooks, ...methods];
+    } else {
+      this._beforeSaveHooks.push(methods);
     }
-    this._beforeSaveHooks.push(methods);
   }
 
   afterSave(methods) {
     if (Array.isArray(methods)) {
       this._afterSaveHooks = [...this._beforeSaveHooks, ...methods];
+    } else {
+      this._afterSaveHooks.push(methods);
     }
-    this._afterSaveHooks.push(methods);
   }
 
-  _runBeforeSaveHooks() {
-    this._beforeSaveHooks.forEach((method) => {
-      this[method]();
-    });
+  async _runBeforeSaveHooks() {
+    for (let hook of this._beforeSaveHooks) {
+      await this[hook]();
+    }
     return this;
   }
 
-  _runAfterSaveHooks() {
-    this._afterSaveHooks.forEach((method) => {
-      this[method]();
-    });
+  async _runAfterSaveHooks() {
+    for (let hook of this._afterSaveHooks) {
+      await this[hook]();
+    }
     return this;
   }
 }
+
+// Return only attributes on serialization
+Base.prototype.toJSON = function () {
+  return Object.assign(
+    {},
+    ...Object.entries(this._attributes).map(([key, value]) => ({
+      [key]: value.value,
+    }))
+  );
+};
 
 export { Attributes, Validators, Base, Client };

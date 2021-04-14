@@ -22,7 +22,6 @@ const Validators = {
     }
   },
 };
-console.log(dbConfig.default);
 const Client = knex({
   client: "mysql2",
   connection: dbConfig.default,
