@@ -1,0 +1,44 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Yet another framework</title>
+    <meta name="description" content="Yet another framework">
+    <meta name="author" content="Leonardo Pereira">
+    <link rel="stylesheet" href="/stylesheets/main.css" />
+</head>
+
+<body>
+    <h3>Posts count: <%= posts.length %>
+    </h3>
+    <%- include('_form') %>
+
+        <table>
+            <tr>
+                <td>ID</td>
+                <td>Title</td>
+                <td>Content</td>
+                <td></td>
+            </tr>
+
+            <% posts.forEach((post)=> { %>
+                <tr>
+                    <td>
+                        <%= post.id %>
+                    </td>
+                    <td>
+                        <%= post.title %>
+                    </td>
+                    <td>
+                        <%= post.content %>
+                    </td>
+                    <td><a href="/posts/<%= post.id %>">View Post</a></td>
+                </tr>
+                <% }) %>
+        </table>
+</body>
+
+</html>

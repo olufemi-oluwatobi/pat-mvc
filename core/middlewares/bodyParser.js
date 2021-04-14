@@ -1,0 +1,33 @@
+import { StringDecoder } from "string_decoder";
+import qs from "querystring";
+
+/**
+ *
+ * @param {Object} request http request object
+ * @param {Object} response http response object
+ * @param {Function} next function for trigering next middleware in middleware chain
+ */
+const BodyParser = (request, response, next) => {
+  const decoder = new StringDecoder("utf-8");
+
+  let payload = "";
+
+  if (!request.controller.data.params) request.controller.data.params = {};
+
+  // on new data chunk
+  request.on("data", (data) => {
+    payload += decoder.write(data);
+  });
+
+  // on request end
+  request.on("end", () => {
+    payload += decoder.end();
+    request.controller.data.params = {
+      ...request.controller.data.params,
+      ...qs.parse(payload),
+    };
+    next();
+  });
+};
+
+export default BodyParser;
