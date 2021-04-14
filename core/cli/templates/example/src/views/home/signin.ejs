@@ -1,0 +1,43 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <link rel="stylesheet" href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" />
+</head>
+
+<body class="flex h-screen bg-indigo-700">
+    <div class="w-full max-w-xs m-auto bg-indigo-100 rounded p-5">
+        <header>
+            <span id="error_message" class="w-full --2 mb-6 border-b-2">
+                <%= typeof error !=="undefined" ? error : null %>
+            </span>
+        </header>
+        <form action="/signin" method="POST">
+            <div>
+                <label class=" block mb-2 text-indigo-500" for="email">Email</label>
+                <input required
+                    class="w-full p-2 mb-6 text-indigo-700 border-b-2 border-indigo-500 outline-none focus:bg-gray-300"
+                    type="email" name="email" id="email">
+                <label class=" block mb-2 text-indigo-500" for="email">Name</label>
+                <input required
+                    class="w-full p-2 mb-6 text-indigo-700 border-b-2 border-indigo-500 outline-none focus:bg-gray-300"
+                    type="name" name="name" id="name">
+                <label class=" block mb-2 text-indigo-500" for="password">Password</label>
+                <input required
+                    class="w-full p-2 mb-6 text-indigo-700 border-b-2 border-indigo-500 outline-none focus:bg-gray-300"
+                    type="password" name="password" id="password">
+
+            </div>
+            <div>
+                <button class="w-full bg-indigo-700 hover:bg-pink-700 text-white font-bold py-2 px-4 mb-6 rounded"
+                    type="submit">Login</button>
+            </div>
+        </form>
+    </div>
+</body>
+<script>
+</script>
+
+</html>

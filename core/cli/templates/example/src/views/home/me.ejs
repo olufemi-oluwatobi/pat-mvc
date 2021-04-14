@@ -1,0 +1,38 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <link rel="stylesheet" href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" />
+</head>
+
+<body>
+    <div class="bg-white p-6 shadow-lg rounded-lg flex justify-between items-center">
+
+        <form action="/logout">
+
+            <div class="flex">
+                <div class="mr-4">
+                    <img class="shadow sm:w-12 sm:h-12 w-14 h-14 rounded-full"
+                        src="http://tailwindtemplates.io/wp-content/uploads/2019/03/link.jpg" alt="Avatar" />
+                </div>
+                <div>
+                    <h1 class="text-xl font-medium text-gray-700">User</h1>
+                    <p class="text-gray-600">
+                        <%= typeof user !=="undefined" ? user.name : null %>
+                    </p>
+                </div>
+            </div>
+            <button class="bg-blue-500 hover:opacity-75 text-white rounded-full px-8 py-2">
+                Logout
+            </button>
+    </div>
+
+    </form>
+    </div>
+</body>
+<script>
+</script>
+
+</html>
