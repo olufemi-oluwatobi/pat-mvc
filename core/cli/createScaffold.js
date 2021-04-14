@@ -32,11 +32,6 @@ module.exports = (args, options, logger) => {
 
   // Ask for variable values
   prompt.start().get(variables, (err, result) => {
-    // Remove MIT License file if another is selected
-    if (result.license !== "MIT") {
-      shell.rm(`${localPath}/LICENSE`);
-    }
-
     // Replace variable values in all files
     shell.ls("-Rl", ".").forEach((entry) => {
       if (entry.isFile()) {
