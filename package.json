@@ -23,7 +23,7 @@
   },
   "scripts": {
     "test": "jest",
-    "start": "NODE_ENV=development babel-node src/index.js"
+    "start": "nodemon --exec NODE_ENV=development babel-node src/index.js"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.2",

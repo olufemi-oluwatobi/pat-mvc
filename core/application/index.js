@@ -5,6 +5,8 @@ import { promisify } from "util";
 import path from "path";
 import nodeStatic from "node-static";
 import BodyParser from "../middlewares/bodyParser";
+import Response from "../response";
+import Request from "../request";
 
 class Application {
   constructor(router, baseDir) {
@@ -77,13 +79,28 @@ class Application {
     }
   }
 
+  set(key, value) {
+    if (["*", "error"].includes(key) && typeof value !== "function") {
+      throw new Error(`${key} middleware type must be a function`);
+    }
+    this[set] = value;
+  }
+
   async run(port = 4001, hostname = "localhost") {
+    const viewPath = path.resolve(this._baseDir, "views");
+
     this._controllers = await this._autoLoad("controllers/");
 
     const server = this._http.createServer((request, response) => {
       this.logger.info(`${request.method} - ${request.url}`);
 
       request.setEncoding("utf-8");
+
+      // Instantiate framework request object
+      request = new Request(request);
+
+      // Instantiate framework response object
+      response = new Response(response, this._engine, this.logger, viewPath);
 
       request.controller = { data: {}, templateData: {} };
 
@@ -99,16 +116,17 @@ class Application {
     });
   }
 
-  async handle404(response, controller) {
-    const errorView = path.resolve(this._baseDir, "public", "404.ejs");
+  async handle404(request, response) {
+    // Check for 404 handler
+    response.status(404);
 
-    response.statusCode = 404;
-    response.setHeader(
-      "Content-Type",
-      controller ? controller._renderData.contentType : "text/html"
-    );
+    if (this["*"]) {
+      this["*"](request, response);
+    } else {
+      response.setHeader("Content-Type", "text/plain");
 
-    response.end(this._renderTemplate(errorView));
+      response.end("Resource not found");
+    }
   }
 
   /**
@@ -130,8 +148,6 @@ class Application {
 
   async _resolveResponse(request, response) {
     try {
-      let template, templatePath, layout;
-
       const requestTime = new Date().getTime();
 
       // resolve router data
@@ -146,13 +162,19 @@ class Application {
         const controllerName = resolvedData.controller
           .replace("Controller", "")
           .toLowerCase();
-        request.params = {
+
+        const params = {
           ...request.controller.data.params,
           ...resolvedData.params,
         };
-        request.query = {
+
+        const query = {
           ...resolvedData.query,
         };
+
+        request.set("params", params);
+        request.set("query", query);
+
         let controller = new this._controllers[controllerName](
           request,
           response
@@ -175,57 +197,58 @@ class Application {
           request.controller.data,
           this._baseDir
         );
+        // console.log(cont)
 
-        let errorView = path.resolve(this._baseDir, "public", "404.ejs");
+        // let errorView = path.resolve(this._baseDir, "public", "404.ejs");
 
-        switch (controller._renderData.statusCode) {
-          case 301:
-            response.writeHead(301, controller._renderData.params);
-            response.end();
-            break;
-          case 404:
-            this.handle404(response, controller);
-            break;
-          case 500:
-            errorView = path.resolve(this._baseDir, "public", "500.ejs");
-            response.statusCode = 500;
-            response.setHeader(
-              "Content-Type",
-              controller._renderData.contentType
-            );
+        // switch (controller._renderData.statusCode) {
+        //   case 301:
+        //     response.writeHead(301, controller._renderData.params);
+        //     response.end();
+        //     break;
+        //   case 404:
+        //     this.handle404(response, controller);
+        //     break;
+        //   case 500:
+        //     errorView = path.resolve(this._baseDir, "public", "500.ejs");
+        //     response.statusCode = 500;
+        //     response.setHeader(
+        //       "Content-Type",
+        //       controller._renderData.contentType
+        //     );
 
-            response.end(
-              this._renderTemplate(errorView, {
-                error: controller._renderData.params.error,
-              })
-            );
-            break;
-          default:
-            response.statusCode = controller._renderData.statusCode;
-            response.setHeader(
-              "Content-Type",
-              controller._renderData.contentType
-            );
+        //     response.end(
+        //       this._renderTemplate(errorView, {
+        //         error: controller._renderData.params.error,
+        //       })
+        //     );
+        //     break;
+        //   default:
+        //     response.statusCode = controller._renderData.statusCode;
+        //     response.setHeader(
+        //       "Content-Type",
+        //       controller._renderData.contentType
+        //     );
 
-            template = this._renderTemplate(controller._templatePath, {
-              ...controller._localData,
-              ...controller._globalData,
-            });
+        //     template = this._renderTemplate(controller._templatePath, {
+        //       ...controller._localData,
+        //       ...controller._globalData,
+        //     });
 
-            templatePath = path.resolve(
-              this._baseDir,
-              "views",
-              "layouts",
-              "application.ejs"
-            );
-            layout = this._renderTemplate(templatePath, {
-              ...controller._globalData,
-              ...request.controller.templateData,
-              template,
-            });
-            response.end(layout);
-            break;
-        }
+        //     templatePath = path.resolve(
+        //       this._baseDir,
+        //       "views",
+        //       "layouts",
+        //       "application.ejs"
+        //     );
+        //     layout = this._renderTemplate(templatePath, {
+        //       ...controller._globalData,
+        //       ...request.controller.templateData,
+        //       template,
+        //     });
+        //     response.end(layout);
+        //     break;
+        // }
       }
 
       // check how long it took to execute request
@@ -252,29 +275,6 @@ class Application {
       files[file.replace(".js", "")] = _import;
     });
     return files;
-  }
-
-  _renderTemplate(path, data) {
-    try {
-      let startTime = new Date().getTime();
-      let renderedHTML = "<template not found>";
-
-      this._engine.renderFile(path, data, {}, (err, str) => {
-        if (err) {
-          this.logger.log(err);
-          return;
-        }
-        renderedHTML = str;
-
-        let elapsedTime = (new Date().getTime() - startTime) / 1000.0;
-        this.logger.info(`Templated loaded ${path} in ${elapsedTime} seconds`);
-      });
-
-      return renderedHTML;
-    } catch (error) {
-      console.log(error);
-      this.logger.error(error);
-    }
   }
 }
 

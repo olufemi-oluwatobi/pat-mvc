@@ -6,6 +6,7 @@ export default class BaseController {
     this._templatePath = "";
     this.request = request;
     this.response = response;
+    this.status = 200;
     this._renderData = {
       statusCode: 200,
       contentType: "text/html",
@@ -22,7 +23,7 @@ export default class BaseController {
         Object.entries(data).map(([key, value]) => {
           this[key] = value;
         });
-        await this[action]();
+        await this[action](this.request, this.response);
         const controllerName = this._controllerPath();
 
         this._templatePath = path.resolve(

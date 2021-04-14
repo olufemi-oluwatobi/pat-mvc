@@ -1,9 +1,14 @@
 import BaseController from "../../core/controller";
 import Post from "../models/post";
 export default class PostController extends BaseController {
-  async index() {
+  async index(request, response) {
+    console.log(request.params, request.query);
     const posts = await Post.findAll();
-    this.set({ posts });
+    response.status(301);
+    console.log(response.status);
+    response.renderTemplate("home/index.ejs", { helloWorld: "hello world" });
+    // response.redirect("/paths");
+    // response.status(200).json({ posts });
   }
 
   async show() {
