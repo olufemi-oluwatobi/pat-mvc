@@ -23,8 +23,7 @@ const Validators = {
   },
 };
 const Client = knex({
-  client: "mysql2",
-  connection: dbConfig.default,
+  ...dbConfig.default,
 });
 
 export { Attributes, Validators, Client };

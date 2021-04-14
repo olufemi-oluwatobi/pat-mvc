@@ -21,6 +21,7 @@ class Application {
     this._staticRoutes = {};
     this._staticRoutes = [];
 
+    // handle logging
     this.logger = {
       info: (msg) => console.log(`INFO - ${msg}`),
       error: (msg) => console.log(`ERROR -${msg}`),

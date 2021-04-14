@@ -1,4 +1,3 @@
-import path from "path";
 export default class BaseController {
   constructor(request, response) {
     this._localData = {};

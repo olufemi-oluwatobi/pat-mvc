@@ -1,18 +1,32 @@
+import dotenv from "dotenv";
+
+dotenv.config();
+const { DB_NAME, DB_USER, PASSWORD } = process.env;
+
 const configs = {
   development: {
-    database: "pat_test",
-    user: "root",
-    password: "Tobiloba",
+    client: "mysql2",
+    connection: {
+      database: DB_NAME,
+      user: DB_USER,
+      password: PASSWORD,
+    },
   },
   test: {
-    database: "pat_test",
-    user: "root",
-    password: "Tobiloba",
+    client: "mysql2",
+    connection: {
+      database: DB_NAME,
+      user: DB_USER,
+      password: PASSWORD,
+    },
   },
   production: {
-    database: "pat_test",
-    user: "root",
-    password: "Tobiloba",
+    client: "mysql2",
+    connection: {
+      database: DB_NAME,
+      user: DB_USER,
+      password: PASSWORD,
+    },
   },
 };
 

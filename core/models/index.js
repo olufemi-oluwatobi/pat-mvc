@@ -4,12 +4,16 @@ class Base {
   constructor(attrs = {}) {
     // set up table name
     this._tableName = this.constructor.name.toLowerCase() + "s";
+
+    // check if attributs have been persisited
     this._persisted = false;
+
     this._beforeSaveHooks = [];
     this._afterSaveHooks = [];
     this._validationHooks = [];
     this._attributes = {};
     this._mututatedAttributes = [];
+
     this.errors = [];
 
     this._attributes["id"] = { type: Attributes.Primary, value: null };
@@ -27,11 +31,17 @@ class Base {
     }
   }
 
+  // set model attributes
   setAttribute(attribute, type) {
     this._attributes[attribute] = { type, value: null };
     this[attribute] = null;
   }
 
+  /**
+   *
+   * @param {Object} attribute entity attribute
+   * @param {*} validator
+   */
   validate(attribute, validator) {
     this._validationHooks.push({
       attribute,
@@ -39,6 +49,10 @@ class Base {
     });
   }
 
+  /**
+   * used for setting bulk attributes at once
+   * @param {} attrs
+   */
   _setMassAttributes(attrs) {
     for (let attr in attrs) {
       if (this._attributes[attr]) {
@@ -48,22 +62,34 @@ class Base {
     }
   }
 
+  /**
+   * save data in data base
+   * @returns
+   */
   async save() {
     this._reloadAttributes();
+
+    // execute before hooks before storing data
     await this._runBeforeSaveHooks();
 
     // Reload Attributes after running hooks
     this._reloadAttributes();
+
     this._checkValidations();
+
     if (this.errors.length) {
       //TODO: HANDLE VALIDATION ERRORS
       throw new Error(this.errors);
     } else {
       const data = this.buildQueryData();
 
+      // if data has been persisited prior to current save execution,
+      // update database  instead of insert
       const result = this._persisted
         ? await this._update(data)
         : await this._insert(data);
+
+      // execute after save hooks
       await this._runAfterSaveHooks();
       return result;
     }
@@ -101,6 +127,12 @@ class Base {
     });
   }
 
+  /**
+   *
+   * @param {Object} params query params
+   *
+   * @returns
+   */
   static async findAll(params = {}) {
     return await this._getAll(params);
   }
@@ -123,6 +155,7 @@ class Base {
   static async _getAll(options) {
     try {
       let { where } = options;
+
       if (!where) {
         where = {};
       }
@@ -133,8 +166,11 @@ class Base {
       const res = await Client.from(obj._tableName).select().where(where);
       res.forEach((row) => {
         const entity = new this();
+
         entity._setMassAttributes(row);
+
         entity._persisted = true;
+
         results.push(entity);
       });
 
@@ -198,7 +234,7 @@ class Base {
     }
   }
 
-  // HOOKS
+  // get methods to be executed before save
   beforeSave(methods) {
     if (Array.isArray(methods)) {
       this._beforeSaveHooks = [...this._beforeSaveHooks, ...methods];
@@ -215,8 +251,11 @@ class Base {
     }
   }
 
+  // execute before save
   async _runBeforeSaveHooks() {
+    // hooks are stores as strings
     for (let hook of this._beforeSaveHooks) {
+      // execute model property that has hook  name
       await this[hook]();
     }
     return this;

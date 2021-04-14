@@ -2,6 +2,10 @@ import Application from "../core/application";
 import Router from "../core/router";
 import cookieParser from "cookie-parser";
 import verifyToken from "./middleware/verifyToken";
+import createTable from "../runMigration";
+
+//  migrate user table
+createTable();
 
 const router = new Router();
 const BLACK_LISTED_ROUTES = [/^\/me/];
