@@ -16,7 +16,7 @@ Pat uses a number of open source projects to work properly:
 - [NodeJs]
 - [Caporal] - a cli building tool
 - [ShellJS] - Unix shell commands for Node.js 
-- [Knew] Database Agnostic query builder
+- [Knek] Database Agnostic query builder
 
 ## Installation &nbsp;
 **With [node](http://nodejs.org) [installed](http://nodejs.org/en/download):**
@@ -29,8 +29,9 @@ $ npm install -g  git+https://github.com/olufemi-oluwatobi/pat-mvc.git
 $ npm install -g caporal shellJs prompt
 ```
 ```
-## scaffold example with CLI tool
+## scaffold example project with CLI tool
 $ npx pat create example --name app
+
 ## Create new project
 $ npx pat create new --name app
 $ Run npm install in folder directory
@@ -45,75 +46,7 @@ NODE_ENV=production node app
 ```
 ##### Pat Js is also compatible with external ORM tools like sequelize, bookshelf etc
 
-# ORM
-With Pat, your ORM looks like this
-```typescript
-import * as Model from "../../core/models";
-import bcrypt from "bcrypt";
 
-export default class User extends Model.Base {
-  setup() {
-    this.setAttribute("email", Model.Attributes.String);
-    this.setAttribute("name", Model.Attributes.String);
-    this.setAttribute("password", Model.Attributes.String);
-    this.validate("password", [
-      Model.Validators.isString,
-      Model.Validators.presenceOf,
-    ]); // we can have multiple validators
-
-    this.beforeSave(["hashPassword"]);
-    this.afterSave(["indicateSaveSuccess"])
-  }
-  async hashPassword() {
-    const password = await bcrypt.hash(this.password, 10);
-    this.password = password;
-  }
-   async indicateSaveSuccess() {
-    console.log("Saved")
-  }
-}
-```
-
-# Life cycle hooks
-Patjs currently has 2 life cycle hooks, beforeCreate and beforeUpdate
-
-
-   Call hook in `setUp` method has 
-   `this.beforeSave(["hashPassword"]);` 
-    `this.afterSave(['indicateSaveSuccess'])`
-   Define hook as a class method
-  `async hashPassword() {
-    const password = await bcrypt.hash(this.password, 10);
-    this.password = password;
-  }`
- 
-## Set Attributes
-PatJs currently has support for 4 attributes
-    - String,
-    - Integer,
-    - Float,
-    - Primary,
-    - DateTime,
-
-Use the `setAttribute` method to define model attributes. Model Attributes map directly to their respective table column.
-`Patjs maps models to tables by pluralizing model names`
-
-`this.setAttribute(name,attribute )`
-
-## Attribute Validation
-this.validate(attributeName, [validator]); // we can have multiple validators
-There are currently two inbuilt validation methods
- -  Model.Validators.isString
- -  Model.Validators.presenceOf.
-
-Custom validators can be created
-```typescript
- validateName(attribute, model){
-    if(model._attributes[attribute].value !== "foo"){
-        model.error.push('${attribute} must have a value of foo')
-        }
-  }
-```
 
 # Framework
 
@@ -149,7 +82,7 @@ app.run(8080);
 
 ### Framework Methods
 `useMiddleWare` - this method is used for appending middleware function to the middlware stack.
-```
+```typescript
     app.useMiddleWare((req, res, next) => {
             req.name = foo
             next()
@@ -158,13 +91,13 @@ app.run(8080);
 
 `static` is used for loading static paths. Static files are loaded from the public files at default.
 
-```
+```typescript
     app.static(["stylesheets"]);
 ```
 
-`json` is an method for parsing http request body to json.
+`json`  method for parsing http request body to json.
 
-```
+```typescript
     app.useMiddleWare(app.json());
 ```
 
@@ -174,7 +107,7 @@ Initiate router
     const router = new Router()
 ```
 Define route.
-```
+```typescript
     router.get("/", "HomeController#index")
     router.post("/", "HomeController#create")
     router.get("/:id", "HomeController#show")
@@ -232,16 +165,16 @@ Controller Variables
 # HTTP Response Methods
 
 `Status` For setting HTTP Status code 
-```
+```typescript
     res.status(200)
 ```
 `send` is used for finalize request and to send response to the client
-```
+```typescript
     res.send("done")
 ```
 
 `redirect` is used for forwarding request to a new path or resource
-```
+```typescript
     res.redirect("/", 200)
 ```
 
@@ -251,16 +184,144 @@ Controller Variables
 ```
 
 `renderTemplate` This is used for serving up templated strings to client
-```
+```typescript
     res.renderTemplate("home/index.ejs",{hello:"world"})
 ```
 
 `cookie` Is used for setting request cookie header 
-```
+```typescript
     res.cookie("token", "cookie string",  { maxAge: 900000, httpOnly: true })
 ```
 
 `clearCookie` 
-```
+```typescript
     res.clearCookie("token", {})
+```
+
+# ORM
+#### DB CONFIG
+`src/config/database.js`
+update config based on by 
+```typescript
+import dotenv from "dotenv";
+
+dotenv.config();
+const { DB_NAME, DB_USER, PASSWORD } = process.env;
+
+const configs = {
+  development: {
+    client: "mysql2",
+    connection: {
+      database: DB_NAME,
+      user: DB_USER,
+      password: PASSWORD,
+    },
+  },
+  test: {
+    client: "sqlite",
+    connection: {
+      database: DB_NAME,
+      user: DB_USER,
+      password: PASSWORD,
+    },
+  },
+  production: {
+    client: "postgres",
+    connection: {
+      database: DB_NAME,
+      user: DB_USER,
+      password: PASSWORD,
+    },
+  },
+};
+
+const env = process.env.NODE_ENV || "development";
+
+const config = configs[env];
+
+export default config;
+
+```
+
+With Pat, your ORM looks like this
+```typescript
+import * as Model from "../../core/models";
+import bcrypt from "bcrypt";
+
+export default class User extends Model.Base {
+  setup() {
+    this.setAttribute("email", Model.Attributes.String);
+    this.setAttribute("name", Model.Attributes.String);
+    this.setAttribute("password", Model.Attributes.String);
+    this.validate("password", [
+      Model.Validators.isString,
+      Model.Validators.presenceOf,
+    ]); // we can have multiple validators
+
+    this.beforeSave(["hashPassword"]);
+    this.afterSave(["indicateSaveSuccess"])
+  }
+  async hashPassword() {
+    const password = await bcrypt.hash(this.password, 10);
+    this.password = password;
+  }
+   async indicateSaveSuccess() {
+    console.log("Saved")
+  }
+}
+```
+
+# Life cycle hooks
+Patjs currently has 2 life cycle hooks, beforeCreate and beforeUpdate
+
+Call hook in `setUp` method has 
+```
+this.beforeSave(["hashPassword"]);
+```
+```
+this.afterSave(['indicateSaveSuccess'])
+
+```
+Define hook as a class method
+
+```typescript
+async hashPassword() {
+    const password = await bcrypt.hash(this.password, 10);
+    this.password = password;
+  }
+ ```
+ 
+## Set Attributes
+PatJs currently has support for 4 attributes
+    - String,
+    - Integer,
+    - Float,
+    - Primary,
+    - DateTime,
+
+Use the `setAttribute` method to define model attributes. Model Attributes map directly to their respective table column.
+`Patjs maps models to tables by pluralizing model names`
+
+```typescript
+this.setAttribute(name, attribute)
+```
+
+## Attribute Validation
+this.validate(attributeName, [validator]); // we can have multiple validators
+There are currently two inbuilt validation methods
+ -  Model.Validators.isString
+ -  Model.Validators.presenceOf.
+
+#### Create a custom validation
+
+```typescript
+ validateName(attribute, model){
+    if(model._attributes[attribute].value !== "foo"){
+        model.error.push('${attribute} must have a value of foo')
+        }
+  }
+  
+ setup(){
+  this.valdidate("name", [this.validateName])
+}
 ```
