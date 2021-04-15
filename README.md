@@ -1,4 +1,4 @@
-PAT JS is a opinionated MVC web framework with node js and knex js. It was designed to resemble the architectural framework of ruby on rails
+PAT JS is an opinionated MVC web framework with node js and knex js. It was designed to resemble the architectural framework of ruby on rails
 
 - This project is strictly experimental and for development purposes only
 ## Features
